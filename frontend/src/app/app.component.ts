@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { Subscription, interval } from 'rxjs';
 
 interface Ticket { id: string; status: string; desk?: number; created_at: string; }
@@ -9,7 +8,7 @@ interface Desk { id: number; status: 'disponible' | 'ocupada'; ticket: string | 
 interface QueueState { next_number: number; queue: Ticket[]; desks: Desk[]; }
 
 @Component({
-  selector: 'app-root', standalone: true, imports: [CommonModule, FormsModule],
+  selector: 'app-root', standalone: true, imports: [CommonModule],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -22,6 +21,7 @@ export class AppComponent implements OnInit, OnDestroy {
   error = '';
   success = '';
   newTicket = '';
+  soundEnabled = false;
   isScreen = window.location.pathname.startsWith('/pantalla');
   now = new Date();
 
@@ -78,17 +78,26 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  announce(ticket: string, desk: number): void {
+  enableSound(): void {
+    this.soundEnabled = true;
+    this.playTone();
+    this.success = 'Avisos de voz y sonido activados.';
+  }
+
+  private playTone(): void {
     try {
-      const AudioCtx = window.AudioContext;
-      const context = new AudioCtx();
+      const context = new window.AudioContext();
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.connect(gain); gain.connect(context.destination);
       oscillator.frequency.value = 880; gain.gain.value = 0.14;
       oscillator.start(); oscillator.stop(context.currentTime + 0.22);
       oscillator.onended = () => { void context.close(); };
-    } catch { /* El anuncio de voz sigue disponible aunque el navegador bloquee el tono. */ }
+    } catch { /* Algunos navegadores o dispositivos no tienen salida de audio. */ }
+  }
+
+  announce(ticket: string, desk: number): void {
+    if (this.soundEnabled) this.playTone();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const speech = new SpeechSynthesisUtterance(`Turno ${ticket}. Pase a ventanilla ${desk}.`);

@@ -5,7 +5,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -105,18 +105,6 @@ def release_desk(desk_id):
         desk.update(status="disponible", ticket=None)
         write_state(data)
         return jsonify({"state": data})
-
-
-@app.post("/api/reset")
-def reset():
-    global state
-    with lock:
-        state = {"next_number": 1, "queue": [], "desks": [
-            {"id": n, "status": "disponible", "ticket": None, "last_ticket": None}
-            for n in range(1, 5)
-        ]}
-        write_state(state)
-        return jsonify(state)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 <main class="screen-mode" *ngIf="isScreen; else adminView">
   <header class="screen-header">
     <a class="brand" href="/"><span class="brand-mark">B</span><span><b>Sucursal</b><small>Atención a clientes</small></span></a>
-    <div class="screen-clock"><span class="live-dot"></span> EN VIVO <strong>{{ timeLabel() }}</strong></div>
+    <div class="screen-clock"><button *ngIf="!soundEnabled" class="audio-enable" (click)="enableSound()">♫ Activar avisos</button><span class="live-dot"></span> EN VIVO <strong>{{ timeLabel() }}</strong></div>
   </header>
   <section class="screen-content">
     <div class="screen-intro"><span class="eyebrow">SISTEMA DE ATENCIÓN</span><h1>Turnos en atención</h1><p>Por favor, espera a que aparezca tu turno y escucha el llamado.</p></div>
