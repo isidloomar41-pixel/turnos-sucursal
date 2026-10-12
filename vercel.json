@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist/turnos-bbva/browser",
+  "installCommand": "npm install --prefix frontend",
+  "functions": { "api/index.py": { "maxDuration": 10 } },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+

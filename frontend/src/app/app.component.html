@@ -1,0 +1,60 @@
+<main class="screen-mode" *ngIf="isScreen; else adminView">
+  <header class="screen-header">
+    <a class="brand" href="/"><span class="brand-mark">B</span><span><b>Sucursal</b><small>Atención a clientes</small></span></a>
+    <div class="screen-clock"><span class="live-dot"></span> EN VIVO <strong>{{ timeLabel() }}</strong></div>
+  </header>
+  <section class="screen-content">
+    <div class="screen-intro"><span class="eyebrow">SISTEMA DE ATENCIÓN</span><h1>Turnos en atención</h1><p>Por favor, espera a que aparezca tu turno y escucha el llamado.</p></div>
+    <div class="call-grid">
+      <article class="call-card" *ngFor="let desk of state.desks" [class.is-calling]="desk.ticket">
+        <div class="call-top"><span>VENTANILLA {{ desk.id }}</span><span class="status-pill" [class.status-busy]="desk.ticket">{{ desk.ticket ? 'EN ATENCIÓN' : 'DISPONIBLE' }}</span></div>
+        <div class="call-number">{{ desk.ticket || '— —' }}</div>
+        <div class="call-bottom"><span class="pulse-icon" *ngIf="desk.ticket">●</span>{{ desk.ticket ? 'Pase por favor' : 'Próximo llamado' }}</div>
+      </article>
+    </div>
+    <div class="screen-footer"><span class="footer-icon">◷</span><span>En espera</span><strong>{{ waiting.length }}</strong><span class="footer-separator"></span><span>Gracias por tu paciencia</span></div>
+  </section>
+  <footer class="screen-brandline"><span>Atención cercana, simple y clara.</span><span>TURNOS · SUCURSAL</span></footer>
+</main>
+
+<ng-template #adminView>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">B</span><span><b>Sucursal</b><small>Sistema de atención</small></span></a>
+      <nav><a class="active" href="/">Panel de atención</a><a href="/pantalla" target="_blank">Pantalla de turnos <span class="external">↗</span></a></nav>
+      <div class="topbar-right"><span class="live-dot"></span><span>Sistema activo</span><span class="avatar">A</span></div>
+    </header>
+    <section class="page-wrap">
+      <div class="page-heading"><div><div class="breadcrumb">SUCURSAL <span>/</span> OPERACIÓN</div><h1>Panel de atención</h1><p>Administra los turnos y el estado de las ventanillas.</p></div><div class="today-chip"><span>◷</span> Hoy, {{ now | date:'d MMM y':'':'es-MX' }}</div></div>
+      <div class="stats-grid">
+        <article class="stat-card"><div class="stat-icon blue">▣</div><div><span>Turnos en espera</span><strong>{{ waiting.length | number:'2.0' }}</strong></div><small class="stat-caption">Pendientes de atención</small></article>
+        <article class="stat-card"><div class="stat-icon amber">◷</div><div><span>En atención</span><strong>{{ serving.length | number:'2.0' }}</strong></div><small class="stat-caption">En ventanilla ahora</small></article>
+        <article class="stat-card"><div class="stat-icon green">✓</div><div><span>Atendidos hoy</span><strong>{{ attendedCount | number:'2.0' }}</strong></div><small class="stat-caption">Atenciones completadas</small></article>
+      </div>
+      <div class="workspace-grid">
+        <section class="panel desks-panel"><div class="section-heading"><div><h2>Ventanillas</h2><p>Controla el estado y llama al siguiente turno.</p></div><span class="count-tag">{{ state.desks.length }} ventanillas</span></div>
+          <div class="desk-list"><article class="desk-card" *ngFor="let desk of state.desks">
+            <div class="desk-number" [class.desk-number-busy]="desk.ticket">{{ desk.id }}</div>
+            <div class="desk-info"><div class="desk-title">Ventanilla {{ desk.id }} <span class="status-pill" [class.status-busy]="desk.ticket">{{ desk.ticket ? 'Ocupada' : 'Disponible' }}</span></div><div class="desk-current">{{ desk.ticket ? 'Atendiendo turno' : 'Lista para atender' }} <strong *ngIf="desk.ticket">{{ desk.ticket }}</strong><span *ngIf="!desk.ticket && desk.last_ticket"> · Último: {{ desk.last_ticket }}</span></div></div>
+            <button class="btn-desk" [class.btn-release]="desk.ticket" [disabled]="busyAction || (!desk.ticket && !nextTicket)" (click)="desk.ticket ? release(desk) : callNext(desk)">{{ desk.ticket ? '✓  Finalizar atención' : 'Llamar siguiente  →' }}</button>
+          </article></div>
+          <div class="next-call" *ngIf="nextTicket"><span class="next-icon">↗</span><span>El siguiente turno es <strong>{{ nextTicket.id }}</strong>. Llama desde una ventanilla disponible.</span></div>
+          <div class="empty-next" *ngIf="!nextTicket"><span>✓</span> No hay turnos pendientes. Genera uno para comenzar.</div>
+        </section>
+        <aside class="side-column">
+          <section class="panel ticket-panel"><div class="panel-kicker"><span class="ticket-icon">＋</span> MÓDULO DE TURNOS</div><h2>Generar turno</h2><p>Entrega un nuevo turno a la siguiente persona en espera.</p><button class="btn-primary" [disabled]="busyAction" (click)="createTicket()"><span>＋</span> Generar turno</button>
+            <div class="ticket-preview" *ngIf="newTicket"><span>Tu turno</span><strong>{{ newTicket }}</strong><small>Conserva tu número y espera el llamado.</small></div>
+          </section>
+          <section class="panel queue-panel"><div class="section-heading"><div><h2>Fila de espera</h2><p>Turnos pendientes</p></div><span class="count-tag">{{ waiting.length }} en fila</span></div>
+            <div class="queue-list" *ngIf="waiting.length; else emptyQueue"><div class="queue-row" *ngFor="let ticket of waiting; let i=index"><span class="queue-position">{{ (i+1) | number:'2.0' }}</span><strong>{{ ticket.id }}</strong><span class="queue-time">{{ ticket.created_at | date:'shortTime' }}</span><span class="queue-state"><i></i> En espera</span></div></div>
+            <ng-template #emptyQueue><div class="queue-empty"><span>☷</span><strong>Fila vacía</strong><small>Los nuevos turnos aparecerán aquí.</small></div></ng-template>
+          </section>
+        </aside>
+      </div>
+      <div class="notice" *ngIf="success"><span>✓</span>{{ success }}<button (click)="success=''">×</button></div>
+      <div class="notice notice-error" *ngIf="error"><span>!</span>{{ error }}<button (click)="error=''">×</button></div>
+      <footer class="page-footer"><span>Panel interno de sucursal <i>·</i> Los cambios se actualizan automáticamente</span><a href="/pantalla" target="_blank">Abrir pantalla pública ↗</a></footer>
+    </section>
+  </main>
+</ng-template>
+
